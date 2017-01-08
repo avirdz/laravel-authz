@@ -1,0 +1,22 @@
+{
+    "name": "avirdz/laravel-authz",
+    "description": "Laravel dynamic ACL",
+    "keywords": ["laravel", "authorization", "acl"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jesus Aviles",
+            "email": "avirdz@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.4",
+        "laravel/framework": "5.3.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Avirdz\\LaravelAuthz\\": "src"
+        }
+    }
+}
+
