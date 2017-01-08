@@ -28,9 +28,8 @@ class Authorize
         }
 
         // full list of permissions
-        $permissions = Cache::remember('authz.permissions', config('authz.cache_expire', 60), function () {
-            return Permission::all();
-        });
+        $permissions = Permission::all();
+
 
         if (count($permissions)) {
             foreach ($permissions as $permission) {
