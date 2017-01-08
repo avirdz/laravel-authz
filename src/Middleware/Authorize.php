@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Avirdz\LaravelAuthz\Middleware;
 
 use Auth;
 use Avirdz\LaravelAuthz\Models\Permission;

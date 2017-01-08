@@ -1,6 +1,6 @@
 <?php
 
-namespace Avirzd\LaravelAuthz\Models;
+namespace Avirdz\LaravelAuthz\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
