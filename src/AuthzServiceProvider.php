@@ -15,12 +15,13 @@ class AuthzServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__ . '/../migrations');
 
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                FooCommand::class,
-                BarCommand::class,
-            ]);
-        }
+//        if ($this->app->runningInConsole()) {
+//            $this->commands([]);
+//        }
+
+        $this->publishes([
+            __DIR__ . '/../config/authz.php' => config_path('authz.php')
+        ], 'config');
     }
 
     /**
