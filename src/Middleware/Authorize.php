@@ -31,7 +31,7 @@ class Authorize
         $permissions = Permission::all();
 
 
-        if (count($permissions)) {
+        if (!$permissions->isEmpty()) {
             foreach ($permissions as $permission) {
                 if ($permission->value == Permission::DENY_ALL) {
                     Gate::define($permission->key_name, function () {
@@ -72,13 +72,10 @@ class Authorize
 
                             // shared resource checked by users relationship (always)
                             if (method_exists($sharedResource, 'users')) {
-                                if (!$sharedResource->relationLoaded('users')) {
-                                    $sharedResource->load('users');
-                                }
-
-                                if (count($sharedResource->getRelation('users')->where('id', $user->id))) {
-                                    return true;
-                                }
+                                return $sharedResource->users()
+                                    ->where('id', $user->id)
+                                    ->selectRaw('1')
+                                    ->exists();
                             }
                         }
 
@@ -104,14 +101,17 @@ class Authorize
                 } elseif ($permission->value == Permission::CHECK_STATUS) {
                     Gate::define($permission->key_name, function () use ($permission) {
                         if (Auth::check()) {
-                            $groups = Auth::getUser()->groups()->get();
-                            if (count($groups)) {
-                                foreach ($groups as $group) {
-                                    $groupPermissions = $group->permissions()
-                                        ->pluck('permission_status', 'permission_id');
+                            // check by group
+                            if (!Auth::getUser()->relationLoaded('groups')) {
+                                Auth::getUser()->load('groups.permissions');
+                            }
 
-                                    if (isset($groupPermissions[$permission->id])
-                                        && $groupPermissions[$permission->id] == Permission::GRANTED) {
+                            if (!Auth::getUser()->groups->isEmpty()) {
+                                foreach (Auth::getUser()->groups as $group) {
+                                    $current = $group->permissions->where('id', $permission->id)->first();
+
+                                    if ($current instanceof Permission && $current->exists
+                                        && $current->value == Permission::GRANTED) {
                                         return true;
                                     }
                                 }
@@ -119,10 +119,13 @@ class Authorize
 
                             // group doesn't have a permission but, maybe there is an exception for
                             // the current user
-                            $userPermissions = Auth::getUser()->permissions()
-                                ->pluck('permission_status', 'permission_id');
-                            if (isset($userPermissions[$permission->id])
-                                && $userPermissions[$permission->id] == Permission::GRANTED) {
+                            if (!Auth::getUser()->relationLoaded('permissions')) {
+                                Auth::getUser()->load('permissions');
+                            }
+
+                            $current = Auth::getUser()->permissions->where('id', $permission->id)->first();
+                            if ($current instanceof Permission && $current->exists
+                                && $current->value == Permission::GRANTED) {
                                 return true;
                             }
                         }
@@ -134,8 +137,10 @@ class Authorize
         }
 
         $boundModel = null;
-        if ($request->route()->hasParameter($resourceName)) {
-            $boundModel = $request->route($resourceName);
+        if (!is_null($resourceName)) {
+            if ($request->route()->hasParameter($resourceName)) {
+                $boundModel = $request->route($resourceName);
+            }
         }
 
         // all the routes must have at least one permission
