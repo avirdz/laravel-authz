@@ -6,11 +6,11 @@ trait AuthzTrait
 {
     public function groups()
     {
-        return $this->belongsToMany(Group::class);
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Group::class);
     }
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
     }
 }
