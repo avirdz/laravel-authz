@@ -37,7 +37,7 @@ class Group extends Model
             self::UNASSIGNED_ID,
             self::ANONYMOUS_ID,
         ])) {
-            throw new DefaultGroupException('Cannot delete a default system group');
+            throw new \Avirdz\LaravelAuthz\Models\DefaultGroupException('Cannot delete a default system group');
         }
 
         return parent::delete();
@@ -60,7 +60,7 @@ class Group extends Model
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
     }
 
     public function save(array $options = [])
@@ -70,7 +70,7 @@ class Group extends Model
             self::UNASSIGNED_ID,
             self::ANONYMOUS_ID,
         ])) {
-            throw new DefaultGroupException('Cannot update a default system group');
+            throw new \Avirdz\LaravelAuthz\Models\DefaultGroupException('Cannot update a default system group');
         }
 
         return parent::save($options);
