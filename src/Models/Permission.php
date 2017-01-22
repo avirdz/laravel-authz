@@ -50,4 +50,9 @@ class Permission extends Model
     ];
 
     public $timestamps = false;
+
+    public function sharebleExceptions()
+    {
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Shareable::class);
+    }
 }

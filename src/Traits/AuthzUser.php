@@ -1,8 +1,8 @@
 <?php
 
-namespace Avirdz\LaravelAuthz\Models;
+namespace Avirdz\LaravelAuthz\Traits;
 
-trait AuthzTrait
+trait AuthzUser
 {
     public function groups()
     {

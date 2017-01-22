@@ -3,7 +3,9 @@
 namespace Avirdz\LaravelAuthz\Middleware;
 
 use Auth;
+use Avirdz\LaravelAuthz\Models\Group;
 use Avirdz\LaravelAuthz\Models\Permission;
+use Avirdz\LaravelAuthz\Models\Groups;
 use Closure;
 use Gate;
 use Illuminate\Support\Facades\Cache;
@@ -25,15 +27,21 @@ class Authorize
         if (Auth::check()) {
             // inject the user's permissions and groups with permissions.
             Auth::getUser()->load('permissions', 'groups.permissions');
+
+            // full list of permissions
+            $permissions = Permission::all();
+        } else {
+            // load permissions for anonymous group
+            $permissions = Permission::join('group_permission', 'group_permission.permission_id', '=', 'permission.id')
+                ->where('group_permission.group_id', Group::ANONYMOUS_ID)
+                ->select('permissions.*')
+                ->get();
         }
-
-        // full list of permissions
-        $permissions = Permission::all();
-
 
         if (!$permissions->isEmpty()) {
             foreach ($permissions as $permission) {
                 if ($permission->value == Permission::DENY_ALL) {
+                    // @todo admin must have access
                     Gate::define($permission->key_name, function () {
                         return false;
                     });
@@ -43,6 +51,10 @@ class Authorize
                     });
                 } elseif ($permission->value == Permission::ONLY_ME) {
                     Gate::define($permission->key_name, function ($user, $resource) {
+                        if (is_null($user) || is_null($resource)) {
+                            return false;
+                        }
+
                         if ($resource->user_id == $user->id) {
                             return true;
                         }
@@ -51,7 +63,7 @@ class Authorize
                     });
                 } elseif ($permission->value == Permission::ONLY_ME_SHARED) {
                     Gate::define($permission->key_name, function ($user, $resource) use ($sharedBy) {
-                        if (is_null($resource)) {
+                        if (is_null($user) || is_null($resource)) {
                             return false;
                         }
 
@@ -82,7 +94,7 @@ class Authorize
                         return false;
                     });
                 } elseif ($permission->value == Permission::ONLY_ANONYMOUS) {
-                    //need to make test for guests users.
+                    // @todo need to make test for guests users.
                     Gate::define($permission->key_name, function () {
                         if (!Auth::check()) {
                             return true;
