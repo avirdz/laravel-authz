@@ -5,10 +5,8 @@ namespace Avirdz\LaravelAuthz\Middleware;
 use Auth;
 use Avirdz\LaravelAuthz\Models\Group;
 use Avirdz\LaravelAuthz\Models\Permission;
-use Avirdz\LaravelAuthz\Models\Groups;
 use Closure;
-use Gate;
-use Illuminate\Support\Facades\Cache;
+use Avirdz\LaravelAuthz\Authz;
 
 class Authorize
 {
@@ -24,142 +22,54 @@ class Authorize
      */
     public function handle($request, Closure $next, $permissionName = null, $resourceName = null, $sharedBy = null)
     {
+        $authz = new Authz($permissionName, $resourceName, $sharedBy);
+
         if (Auth::check()) {
             // inject the user's permissions and groups with permissions.
             Auth::getUser()->load('permissions', 'groups.permissions');
 
-            // full list of permissions
-            $permissions = Permission::all();
+            // if no groups, load the default group
+            if (Auth::getUser()->groups->isEmpty()) {
+                $defaultGroup = Group::find(Group::UNASSIGNED_ID);
+
+                if ($defaultGroup instanceof Group) {
+                    $defaultGroup->load('permissions');
+                }
+
+                Auth::getUser()->groups->push($defaultGroup);
+            }
+
+            if (!Auth::getUser()->groups->isEmpty()) {
+                foreach (Auth::getUser()->groups as $group) {
+                    if (!$group->permissions->isEmpty()) {
+                        foreach ($group->permissions as $permission) {
+                            $authz->definePermission($permission);
+                        }
+                    }
+                }
+            }
+
+            if (!Auth::getUser()->permissions->isEmpty()) {
+                foreach (Auth::getUser()->permissions as $permission) {
+                    $authz->definePermission($permission);
+                }
+            }
         } else {
             // load permissions for anonymous group
             $permissions = Permission::join('group_permission', 'group_permission.permission_id', '=', 'permission.id')
                 ->where('group_permission.group_id', Group::ANONYMOUS_ID)
                 ->select('permissions.*')
                 ->get();
-        }
 
-        if (!$permissions->isEmpty()) {
-            foreach ($permissions as $permission) {
-                if ($permission->value == Permission::DENY_ALL) {
-                    // @todo admin must have access
-                    Gate::define($permission->key_name, function () {
-                        return false;
-                    });
-                } elseif ($permission->value == Permission::ALLOW_ALL) {
-                    Gate::define($permission->key_name, function () {
-                        return true;
-                    });
-                } elseif ($permission->value == Permission::ONLY_ME) {
-                    Gate::define($permission->key_name, function ($user, $resource) {
-                        if (is_null($user) || is_null($resource)) {
-                            return false;
-                        }
-
-                        if ($resource->user_id == $user->id) {
-                            return true;
-                        }
-
-                        return false;
-                    });
-                } elseif ($permission->value == Permission::ONLY_ME_SHARED) {
-                    Gate::define($permission->key_name, function ($user, $resource) use ($sharedBy) {
-                        if (is_null($user) || is_null($resource)) {
-                            return false;
-                        }
-
-                        if ($resource->user_id == $user->id) {
-                            return true;
-                        } else {
-                            $sharedResource = $resource;
-
-                            // load the shared resource
-                            if (!empty($sharedBy)) {
-                                if (method_exists($resource, $sharedBy)) {
-                                    if (!$resource->relationLoaded($sharedBy)) {
-                                        $resource->load($sharedBy);
-                                        $sharedResource = $resource->{$sharedBy}()->get();
-                                    }
-                                }
-                            }
-
-                            // shared resource checked by users relationship (always)
-                            if (method_exists($sharedResource, 'users')) {
-                                return $sharedResource->users()
-                                    ->where('id', $user->id)
-                                    ->selectRaw('1')
-                                    ->exists();
-                            }
-                        }
-
-                        return false;
-                    });
-                } elseif ($permission->value == Permission::ONLY_ANONYMOUS) {
-                    // @todo need to make test for guests users.
-                    Gate::define($permission->key_name, function () {
-                        if (!Auth::check()) {
-                            return true;
-                        }
-
-                        return false;
-                    });
-                } elseif ($permission->value == Permission::ONLY_AUTHENTICATED) {
-                    Gate::define($permission->key_name, function () {
-                        if (Auth::check()) {
-                            return true;
-                        }
-
-                        return false;
-                    });
-                } elseif ($permission->value == Permission::CHECK_STATUS) {
-                    Gate::define($permission->key_name, function () use ($permission) {
-                        if (Auth::check()) {
-                            // check by group
-                            if (!Auth::getUser()->relationLoaded('groups')) {
-                                Auth::getUser()->load('groups.permissions');
-                            }
-
-                            if (!Auth::getUser()->groups->isEmpty()) {
-                                foreach (Auth::getUser()->groups as $group) {
-                                    $current = $group->permissions->where('id', $permission->id)->first();
-
-                                    if ($current instanceof Permission && $current->exists
-                                        && $current->value == Permission::GRANTED) {
-                                        return true;
-                                    }
-                                }
-                            }
-
-                            // group doesn't have a permission but, maybe there is an exception for
-                            // the current user
-                            if (!Auth::getUser()->relationLoaded('permissions')) {
-                                Auth::getUser()->load('permissions');
-                            }
-
-                            $current = Auth::getUser()->permissions->where('id', $permission->id)->first();
-                            if ($current instanceof Permission && $current->exists
-                                && $current->value == Permission::GRANTED) {
-                                return true;
-                            }
-                        }
-
-                        return false;
-                    });
+            // define permissions on gate
+            if (!$permissions->isEmpty()) {
+                foreach ($permissions as $permission) {
+                    $authz->definePermission($permission);
                 }
             }
         }
 
-        $boundModel = null;
-        if (!is_null($resourceName)) {
-            if ($request->route()->hasParameter($resourceName)) {
-                $boundModel = $request->route($resourceName);
-            }
-        }
-
-        // all the routes must have at least one permission
-        // except when the route is public but you want to validate another permissions
-        // in controllers or blade templates.
-        // @todo all the routes MUST have at least one permission key
-        if (!is_null($permissionName) && Gate::denies($permissionName, $boundModel)) {
+        if ($authz->isRequestDenied($request)) {
             abort(403);
         }
 
