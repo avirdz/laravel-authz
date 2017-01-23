@@ -149,7 +149,7 @@ class Authz
 
                 // check if the resource is share with me
                 if (method_exists($sharedResource, 'isSharedWithMe')) {
-                    return $sharedResource->isSharedWithMe($user->id, $permission->id);
+                    return $sharedResource->isSharedWithMe($permission->id);
                 }
             }
 

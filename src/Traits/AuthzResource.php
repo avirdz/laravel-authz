@@ -4,7 +4,7 @@ namespace Avirdz\LaravelAuthz\Traits;
 
 trait AuthzResource
 {
-    protected $sharedWithMe;
+    protected $sharedWithMe = [];
 
     public function sharedWith()
     {
@@ -17,25 +17,27 @@ trait AuthzResource
         return $this->morphToMany($userClass, 'shareable');
     }
 
-    public function isSharedWithMe($userId, $permissionId)
+    public function isSharedWithMe($permissionId)
     {
-        if ($this->sharedWithMe === null) {
-            $shareableUser = $this->sharedWith()
-                ->wherePivot('user_id', $userId)
-                ->select('pivot_id')
+        if (!array_key_exists($permissionId, $this->sharedWithMe)) {
+            $shareableInfo = \DB::table('shareables')
+                ->leftJoin('permission_shareable', function ($query) use ($permissionId) {
+                    $query->on('permission_shareable.shareable_id', '=', 'shareables.id');
+                    $query->where('permission_shareable.permission_id', $permissionId);
+                })
+                ->where('shareables.user_id', \Auth::id())
+                ->where('shareables.shareable_id', $this->id)
+                ->where('shareables.shareable_type', $this->getActualClassNameForMorph(__CLASS__))
+                ->select(['shareables.*', 'permission_shareable.shareable_id as exception'])
                 ->first();
 
-            if (!empty($shareableUser)) {
-                $this->sharedWithMe = !\DB::table('permission_shareable')
-                    ->where('shareable_id', $shareableUser->pivot->id)
-                    ->where('permission_id', $permissionId)
-                    ->selectRaw('1')
-                    ->exists();
-            } else {
-                $this->sharedWithMe = false;
+            $this->sharedWithMe[$permissionId] = false;
+
+            if ($shareableInfo !== null) {
+                $this->sharedWithMe[$permissionId] = $shareableInfo->exception === null;
             }
         }
 
-        return $this->sharedWithMe;
+        return $this->sharedWithMe[$permissionId];
     }
 }
