@@ -49,7 +49,44 @@ class Permission extends Model
         'value'
     ];
 
+    protected static $default_permissions = [
+        'groups.view',
+        'groups.create',
+        'groups.update',
+        'groups.delete',
+        'groups.add-user',
+        'groups.remove-user',
+        'permissions.view',
+        'permissions.create',
+        'permissions.update',
+        'permissions.delete',
+        'permissions.grant',
+        'permissions.deny',
+        'shareables.share',
+        'shareables.unshare',
+        'shareables.deny',
+    ];
+
     public $timestamps = false;
+
+    /**
+     * Delete method, system permissions can't be deleted
+     * @return bool|null
+     * @throws DefaultPermissionException
+     */
+    public function delete()
+    {
+        if ($this->getIsSystemPermissionAttribute()) {
+            throw new DefaultPermissionException();
+        }
+
+        return parent::delete();
+    }
+
+    public function getIsSystemPermissionAttribute()
+    {
+        return in_array($this->key_name, self::$default_permissions);
+    }
 
     public function shareableExceptions()
     {
@@ -66,6 +103,21 @@ class Permission extends Model
     }
 
     /**
+     * Save method, system permissions can't be modified
+     * @param array $options
+     * @return bool
+     * @throws DefaultPermissionException
+     */
+    public function save(array $options = [])
+    {
+        if ($this->getIsSystemPermissionAttribute()) {
+            throw new DefaultPermissionException();
+        }
+
+        return parent::save($options);
+    }
+
+    /**
      * Users list from this permission
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      * @throws \Exception
@@ -75,7 +127,7 @@ class Permission extends Model
         $userClass = config('authz.user_model');
 
         if (!class_exists($userClass)) {
-            throw new \Exception('User model doesn\'t exist: ' . $userClass);
+            throw new InvalidUserModelException();
         }
 
         return $this->belongsToMany($userClass);

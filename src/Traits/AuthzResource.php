@@ -2,6 +2,8 @@
 
 namespace Avirdz\LaravelAuthz\Traits;
 
+use Avirdz\LaravelAuthz\Models\InvalidUserModelException;
+
 trait AuthzResource
 {
     protected $sharedWithMe = [];
@@ -16,7 +18,7 @@ trait AuthzResource
         $userClass = config('authz.user_model');
 
         if (!class_exists($userClass)) {
-            throw new \Exception('User model doesn\'t exist: ' . $userClass);
+            throw new InvalidUserModelException();
         }
 
         return $this->morphToMany($userClass, 'shareable');

@@ -38,12 +38,8 @@ class Group extends Model
      */
     public function delete()
     {
-        if (in_array($this->id, [
-            self::SYS_ADMIN_ID,
-            self::UNASSIGNED_ID,
-            self::ANONYMOUS_ID,
-        ])) {
-            throw new \Avirdz\LaravelAuthz\Models\DefaultGroupException('Cannot delete a default system group');
+        if ($this->getIsSystemGroupAttribute()) {
+            throw new DefaultGroupException();
         }
 
         return parent::delete();
@@ -89,12 +85,8 @@ class Group extends Model
      */
     public function save(array $options = [])
     {
-        if (in_array($this->id, [
-            self::SYS_ADMIN_ID,
-            self::UNASSIGNED_ID,
-            self::ANONYMOUS_ID,
-        ])) {
-            throw new \Avirdz\LaravelAuthz\Models\DefaultGroupException('Cannot update a default system group');
+        if ($this->getIsSystemGroupAttribute()) {
+            throw new DefaultGroupException();
         }
 
         return parent::save($options);
@@ -110,7 +102,7 @@ class Group extends Model
         $userClass = config('authz.user_model');
 
         if (!class_exists($userClass)) {
-            throw new \Exception('User model doesn\'t exist: ' . $userClass);
+            throw new InvalidUserModelException();
         }
 
         return $this->belongsToMany($userClass);
