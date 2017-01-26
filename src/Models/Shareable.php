@@ -14,6 +14,10 @@ class Shareable extends Model
         'shareable_type',
     ];
 
+    /**
+     * Permission exceptions for shared resources
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
     public function permissionExceptions()
     {
         return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);

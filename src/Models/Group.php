@@ -21,15 +21,21 @@ class Group extends Model
      */
     const ANONYMOUS_ID = 3;
 
-
+    /**
+     * Default group for new users, if apply.
+     */
     const DEFAULT_GROUP_ID = self::UNASSIGNED_ID;
-
 
     protected $appends = ['is_default', 'is_system_group'];
     protected $fillable = ['name', 'description'];
     public $timestamps = false;
 
 
+    /**
+     * Delete method, system groups can't be modified
+     * @return bool|null
+     * @throws DefaultGroupException
+     */
     public function delete()
     {
         if (in_array($this->id, [
@@ -44,11 +50,19 @@ class Group extends Model
     }
 
 
+    /**
+     * Default group attribute
+     * @return bool
+     */
     public function getIsDefaultAttribute()
     {
         return $this->id === self::DEFAULT_GROUP_ID;
     }
 
+    /**
+     * System group attribute
+     * @return bool
+     */
     public function getIsSystemGroupAttribute()
     {
         return in_array($this->id, [
@@ -58,11 +72,21 @@ class Group extends Model
         ]);
     }
 
+    /**
+     * Permissions list from this group
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
     public function permissions()
     {
         return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
     }
 
+    /**
+     * Save method, system groups can't be modified
+     * @param array $options
+     * @return bool
+     * @throws DefaultGroupException
+     */
     public function save(array $options = [])
     {
         if (in_array($this->id, [
@@ -76,6 +100,11 @@ class Group extends Model
         return parent::save($options);
     }
 
+    /**
+     * Users list from this group
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @throws \Exception
+     */
     public function users()
     {
         $userClass = config('authz.user_model');

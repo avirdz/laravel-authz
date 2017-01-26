@@ -6,6 +6,11 @@ trait AuthzResource
 {
     protected $sharedWithMe = [];
 
+    /**
+     * Shared users list from this resource
+     * @return mixed
+     * @throws \Exception
+     */
     public function sharedWith()
     {
         $userClass = config('authz.user_model');
@@ -17,6 +22,11 @@ trait AuthzResource
         return $this->morphToMany($userClass, 'shareable');
     }
 
+    /**
+     * Determines if a resource is shared with the current user
+     * @param $permissionId int
+     * @return bool
+     */
     public function isSharedWithMe($permissionId)
     {
         if (!array_key_exists($permissionId, $this->sharedWithMe)) {

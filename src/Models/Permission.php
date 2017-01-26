@@ -51,8 +51,33 @@ class Permission extends Model
 
     public $timestamps = false;
 
-    public function sharebleExceptions()
+    public function shareableExceptions()
     {
         return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Shareable::class);
+    }
+
+    /**
+     * Groups list from this permission
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function groups()
+    {
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Group::class);
+    }
+
+    /**
+     * Users list from this permission
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @throws \Exception
+     */
+    public function users()
+    {
+        $userClass = config('authz.user_model');
+
+        if (!class_exists($userClass)) {
+            throw new \Exception('User model doesn\'t exist: ' . $userClass);
+        }
+
+        return $this->belongsToMany($userClass);
     }
 }
