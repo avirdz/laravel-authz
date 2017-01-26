@@ -21,7 +21,7 @@ class AuthzGroupSeeder extends Seeder
             [
                 'id' => Group::UNASSIGNED_ID,
                 'name' => 'Unassigned',
-                'description' => 'Every user without assignation of groups, has this group by default',
+                'description' => 'Every user without assignation of groups has this group by default',
             ],
             [
                 'id' => Group::ANONYMOUS_ID,

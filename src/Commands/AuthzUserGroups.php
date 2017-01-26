@@ -62,12 +62,12 @@ class AuthzUserGroups extends Command
         if ($groups->isEmpty()) {
             $this->info('No groups');
         } else {
-            $output = $groups->toArray();
+            $output = $groups->makeHidden('pivot')->toArray();
             $this->table([
                 'Id',
                 'Name',
                 'Description',
-            ], $output['data']);
+            ], $output);
             // @todo add pagination info
         }
     }

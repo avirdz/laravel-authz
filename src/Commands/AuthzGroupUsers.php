@@ -65,12 +65,12 @@ class AuthzGroupUsers extends Command
                 $this->info($group->name . ' must not have any user');
             }
         } else {
-            $output = $users->toArray();
+            $output = $users->makeHidden('pivot')->toArray();
             $this->table([
                 'Id',
                 'Name',
                 'Email',
-            ], $output['data']);
+            ], $output);
             // @todo add pagination info
         }
     }
