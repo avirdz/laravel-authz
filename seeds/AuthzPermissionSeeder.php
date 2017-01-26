@@ -1,9 +1,7 @@
 <?php
 
-use Avirdz\LaravelAuthz\Models\Group;
 use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Database\Seeder;
-
 
 class AuthzPermissionSeeder extends Seeder
 {
@@ -14,7 +12,7 @@ class AuthzPermissionSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('users')->insert([
+        DB::table('permissions')->insert([
             [
                 'key_name' => 'groups.view',
                 'description' => 'View groups',

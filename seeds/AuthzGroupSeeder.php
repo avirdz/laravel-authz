@@ -12,7 +12,7 @@ class AuthzGroupSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('users')->insert([
+        DB::table('groups')->insert([
             [
                 'id' => Group::SYS_ADMIN_ID,
                 'name' => 'System Administrator',
