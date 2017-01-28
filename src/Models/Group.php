@@ -74,7 +74,8 @@ class Group extends Model
      */
     public function permissions()
     {
-        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
+        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class)
+            ->withPivot(['group_id', 'permission_id', 'permission_status']);
     }
 
     /**

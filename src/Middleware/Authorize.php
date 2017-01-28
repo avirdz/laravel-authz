@@ -24,22 +24,76 @@ class Authorize
     {
         $authz = new Authz($permissionName, $resourceName, $sharedBy);
 
+        // if single mode is on and no permission to check the request is allowed
+        if ($permissionName === null && $authz->isSingleModeOn()) {
+            debug('single mode on no permission');
+            return $next($request);
+        }
+
+        // set permissions for a logged user
         if (Auth::check()) {
-            // inject the user's permissions and groups with permissions.
-            Auth::getUser()->load('permissions', 'groups.permissions');
+            // load user's groups
+            Auth::getUser()->load('groups');
 
-            // if no groups, load the default group
-            if (Auth::getUser()->groups->isEmpty()) {
-                $defaultGroup = Group::find(Group::UNASSIGNED_ID);
-
-                if ($defaultGroup instanceof Group) {
-                    $defaultGroup->load('permissions');
-                }
-
-                Auth::getUser()->groups->push($defaultGroup);
+            // admin are allowed for all resources, so no necessity to define permissions
+            if (Auth::getUser()->isSuperAdmin()) {
+                return $next($request);
             }
 
+            // if the user does not have groups, load the default group
+            if (Auth::getUser()->groups->isEmpty()) {
+                $defaultGroup = Group::find(Group::DEFAULT_GROUP_ID);
+
+                if ($defaultGroup instanceof Group) {
+                    Auth::getUser()->groups->push($defaultGroup);
+                }
+            }
+
+            // load single permission if single mode on
+            if ($authz->isSingleModeOn()) {
+                $currentPermission = Permission::where('key_name', $permissionName)
+                    ->select(['key_name', 'value'])
+                    ->first();
+
+                // if permission doesn't exist deny the request
+                if ($currentPermission === null) {
+                    abort(403);
+                }
+            } else {
+                // load logged user relevant permissions
+                $permissions = Permission::whereIn('value', [
+                    Permission::ANY,
+                    Permission::AUTHENTICATED,
+                    Permission::OWNER,
+                    Permission::SHARED
+                ])->select(['key_name', 'value'])
+                    ->get();
+
+                $currentPermission = null;
+                if (!$permissions->isEmpty()) {
+                    $currentPermission = $permissions->where('key_name', $permissionName)->first();
+                }
+            }
+
+            // define the current key and test it
+            if ($permissionName !== null && $currentPermission !== null) {
+                $authz->definePermission($currentPermission);
+                debug($currentPermission);
+
+                if ($authz->isRequestDenied($request)) {
+                    debug('request denied 1');
+                    abort(403);
+                } elseif ($authz->isSingleModeOn()) {
+                    debug('single mode on request allowed');
+                    return $next($request);
+                }
+            }
+
+
+            // defining permissions by group
             if (!Auth::getUser()->groups->isEmpty()) {
+                Auth::getUser()->groups->load('permissions');
+
                 foreach (Auth::getUser()->groups as $group) {
                     if (!$group->permissions->isEmpty()) {
                         foreach ($group->permissions as $permission) {
@@ -49,27 +103,55 @@ class Authorize
                 }
             }
 
+            // defining permissions by user exceptions
             if (!Auth::getUser()->permissions->isEmpty()) {
                 foreach (Auth::getUser()->permissions as $permission) {
                     $authz->definePermission($permission);
                 }
             }
-        } else {
-            // load permissions for anonymous group
-            $permissions = Permission::join('group_permission', 'group_permission.permission_id', '=', 'permission.id')
-                ->where('group_permission.group_id', Group::ANONYMOUS_ID)
-                ->select('permissions.*')
-                ->get();
 
-            // define permissions on gate
-            if (!$permissions->isEmpty()) {
+            // defining global permissions
+            if (isset($permissions) && !$permissions->isEmpty()) {
                 foreach ($permissions as $permission) {
                     $authz->definePermission($permission);
+                }
+            }
+            debug(Auth::getUser());
+        } else {
+            if ($authz->isSingleModeOn()) {
+                $currentPermission = Permission::where('key_name', $permissionName)
+                    ->select(['key_name', 'value'])
+                    ->first();
+
+                // if permission doesn't exist deny the request
+                if ($currentPermission === null) {
+                    abort(403);
+                } else {
+                    $authz->definePermission($currentPermission);
+                }
+            } else {
+                // load permissions for anonymous group, and permissions with value ALLOW_ALL and ONLY_ANONYMOUS
+                $permissions = Permission::join(
+                    'group_permission',
+                    'group_permission.permission_id',
+                    '=',
+                    'permissions.id'
+                )->where('group_permission.group_id', Group::ANONYMOUS_ID)
+                    ->orWhereIn('permissions.value', [Permission::ANY, Permission::ANONYMOUS])
+                    ->select('permissions.*')
+                    ->get();
+
+                // define permissions on gate
+                if (!$permissions->isEmpty()) {
+                    foreach ($permissions as $permission) {
+                        $authz->definePermission($permission);
+                    }
                 }
             }
         }
 
         if ($authz->isRequestDenied($request)) {
+            debug('denied by last');
             abort(403);
         }
 

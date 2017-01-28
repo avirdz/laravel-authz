@@ -22,4 +22,15 @@ class Shareable extends Model
     {
         return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
     }
+
+    public function users()
+    {
+        $userClass = config('authz.user_model');
+
+        if (!class_exists($userClass)) {
+            throw new InvalidUserModelException();
+        }
+
+        return $this->morphedByMany($userClass, 'shareable');
+    }
 }

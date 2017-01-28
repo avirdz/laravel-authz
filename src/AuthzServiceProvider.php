@@ -19,8 +19,10 @@ class AuthzServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 Commands\AuthzDenyGroup::class,
+                Commands\AuthzDenyShared::class,
                 Commands\AuthzDenyUser::class,
                 Commands\AuthzGrantGroup::class,
+                Commands\AuthzGrantShared::class,
                 Commands\AuthzGrantUser::class,
                 Commands\AuthzGroupAddUser::class,
                 Commands\AuthzGroupCreate::class,
@@ -32,9 +34,10 @@ class AuthzServiceProvider extends ServiceProvider
                 Commands\AuthzPermissionDelete::class,
                 Commands\AuthzPermissions::class,
                 Commands\AuthzPermissionSet::class,
-                Commands\AuthzResourcePermissionException::class,
-                Commands\AuthzShareResource::class,
-                Commands\AuthzUnshareResource::class,
+                Commands\AuthzPermissionView::class,
+                Commands\AuthzShare::class,
+                Commands\AuthzShareable::class,
+                Commands\AuthzUnshare::class,
                 Commands\AuthzUserGroups::class,
             ]);
         }

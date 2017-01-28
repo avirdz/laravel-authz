@@ -5,21 +5,21 @@ namespace Avirdz\LaravelAuthz\Commands;
 use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Console\Command;
 
-class AuthzGrantGroup extends Command
+class AuthzDenyShared extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'authz:grant-group {permission} {group}';
+    protected $signature = 'authz:deny-shared {permission} {user} {resource} {class}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Set permission granted to a group';
+    protected $description = 'Share a resource with a user';
 
     /**
      * Create a new command instance.
@@ -38,14 +38,19 @@ class AuthzGrantGroup extends Command
      */
     public function handle()
     {
+        $id = $this->argument('user');
+        $resourceId = $this->argument('resource');
+        $resourceClass = $this->argument('class');
         $permission = $this->argument('permission');
-        $id = $this->argument('group');
+
 
         $this->call('authz:permission-set', [
             'permission' => $permission,
             'id' => $id,
-            'value' => Permission::GRANTED,
-            '--type' => 'group',
+            'value' => Permission::DENIED,
+            'resource' => $resourceId,
+            '--class' => $resourceClass,
+            '--type' => 'user',
         ]);
     }
 }

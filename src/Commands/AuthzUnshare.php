@@ -2,16 +2,17 @@
 
 namespace Avirdz\LaravelAuthz\Commands;
 
+use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Console\Command;
 
-class AuthzUnshareResource extends Command
+class AuthzUnshare extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'authz:unshare-resource {user} {resource}';
+    protected $signature = 'authz:unshare {user} {resource} {class}';
 
     /**
      * The console command description.
@@ -37,6 +38,15 @@ class AuthzUnshareResource extends Command
      */
     public function handle()
     {
-        //
+        $userId = $this->argument('user');
+        $resourceId = $this->argument('resource');
+        $resourceClass = $this->argument('class');
+
+        $this->call('authz:shareable', [
+            'user' => $userId,
+            'value' => Permission::DENIED,
+            'resource' => $resourceId,
+            'class' => $resourceClass,
+        ]);
     }
 }

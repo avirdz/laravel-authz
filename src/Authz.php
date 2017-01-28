@@ -2,7 +2,6 @@
 
 namespace Avirdz\LaravelAuthz;
 
-use Auth;
 use Gate;
 use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -53,16 +52,22 @@ class Authz
         $this->permissionName = $permissionName;
         $this->resourceName = $resourceName;
         $this->sharedBy = $sharedBy;
+
+        Gate::before(function ($user) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+        });
     }
 
     /**
      * Define a public permission
-     * @param $key string
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineAllowAll($key)
+    protected function defineAnyPermission(Permission $permission)
     {
-        Gate::define($key, function () {
+        Gate::define($permission->key_name, function () {
             return true;
         });
 
@@ -71,20 +76,21 @@ class Authz
 
     /**
      * Define a permission for group and user exceptions
-     * @param Permission $permission
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineByGroup(Permission $permission)
+    protected function defineCustomPermission(Permission $permission)
     {
-        Gate::define($permission->key_name, function () use ($permission) {
+        Gate::define($permission->key_name, function ($user) use ($permission) {
             $status = false;
-            if (Auth::check()) {
-                if (!Auth::getUser()->groups->isEmpty()) {
-                    foreach (Auth::getUser()->groups as $group) {
+
+            if ($user !== null) {
+                if (!$user->groups->isEmpty()) {
+                    foreach ($user->groups as $group) {
                         $current = $group->permissions->where('id', $permission->id)->first();
 
                         if ($current instanceof Permission && $current->exists
-                            && $current->value == Permission::GRANTED) {
+                            && $current->pivot->permission_status == Permission::GRANTED) {
                             $status = true;
                             break;
                         }
@@ -92,10 +98,10 @@ class Authz
                 }
 
                 // maybe there is an exception for the current user
-                if (!Auth::getUser()->permissions->isEmpty()) {
-                    $current = Auth::getUser()->permissions->where('id', $permission->id)->first();
+                if (!$user->permissions->isEmpty()) {
+                    $current = $user->permissions->where('id', $permission->id)->first();
                     if ($current instanceof Permission && $current->exists) {
-                        $status = $current->value == Permission::GRANTED;
+                        $status = $current->pivot->permission_status == Permission::GRANTED;
                     }
                 }
             }
@@ -109,14 +115,13 @@ class Authz
 
     /**
      * Define a permission for System administrator
-     * @param $key string
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineDenyAll($key)
+    protected function defineRootPermission(Permission $permission)
     {
-        // @todo admin must have access
-        Gate::define($key, function () {
-            return false;
+        Gate::define($permission->key_name, function ($user) {
+            return $user !== null && $user->isSuperAdmin();
         });
 
         return $this;
@@ -124,18 +129,14 @@ class Authz
 
     /**
      * Define a permission for anonymous users
-     * @param $key string
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineOnlyAnonymous($key)
+    protected function defineAnonymousPermission(Permission $permission)
     {
         // @todo need to make test for guests users.
-        Gate::define($key, function () {
-            if (!Auth::check()) {
-                return true;
-            }
-
-            return false;
+        Gate::define($permission->key_name, function ($user) {
+            return $user === null;
         });
 
         return $this;
@@ -143,17 +144,13 @@ class Authz
 
     /**
      * Define a permission for authenticated users
-     * @param $key
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineOnlyAuthenticated($key)
+    protected function defineAuthenticatedPermission(Permission $permission)
     {
-        Gate::define($key, function () {
-            if (Auth::check()) {
-                return true;
-            }
-
-            return false;
+        Gate::define($permission->key_name, function ($user) {
+            return $user !== null;
         });
 
         return $this;
@@ -161,12 +158,12 @@ class Authz
 
     /**
      * Define a permission for resource owner
-     * @param $key string
+     * @param $permission Permission
      * @return $this
      */
-    protected function defineOnlyMe($key)
+    protected function defineOwnerPermission(Permission $permission)
     {
-        Gate::define($key, function ($user, $resource) {
+        Gate::define($permission->key_name, function ($user, $resource) {
             if ($user === null || $resource === null) {
                 return false;
             }
@@ -182,7 +179,7 @@ class Authz
      * @param Permission $permission
      * @return $this
      */
-    protected function defineOnlyMeShared(Permission $permission)
+    protected function defineSharedPermission(Permission $permission)
     {
         $sharedBy = $this->sharedBy;
 
@@ -237,24 +234,33 @@ class Authz
 
         $this->definedPermissions[] = $permission->id;
 
-        if ($permission->value == Permission::DENY_ALL) {
-            return $this->defineAllowAll($permission->key_name);
-        } elseif ($permission->value == Permission::ALLOW_ALL) {
-            return $this->defineAllowAll($permission->key_name);
-        } elseif ($permission->value == Permission::ONLY_ME) {
-            return $this->defineOnlyMe($permission->key_name);
-        } elseif ($permission->value == Permission::ONLY_ME_SHARED) {
-            return $this->defineOnlyMeShared($permission);
-        } elseif ($permission->value == Permission::ONLY_ANONYMOUS) {
-            return $this->defineOnlyAnonymous($permission->key_name);
-        } elseif ($permission->value == Permission::ONLY_AUTHENTICATED) {
-            return $this->defineOnlyAuthenticated($permission->key_name);
-        } elseif ($permission->value == Permission::CHECK_STATUS) {
-            return $this->defineByGroup($permission);
+        switch ($permission->value) {
+            case Permission::CUSTOM:
+                return $this->defineCustomPermission($permission);
+                break;
+            case Permission::ANY:
+                return $this->defineAnyPermission($permission);
+                break;
+            case Permission::OWNER:
+                return $this->defineOwnerPermission($permission);
+                break;
+            case Permission::SHARED:
+                return $this->defineSharedPermission($permission);
+                break;
+            case Permission::ANONYMOUS:
+                return $this->defineAnonymousPermission($permission);
+                break;
+            case Permission::AUTHENTICATED:
+                return $this->defineAuthenticatedPermission($permission);
+                break;
+            case Permission::ROOT:
+                return $this->defineRootPermission($permission);
+                break;
         }
 
         return $this;
     }
+
 
     /**
      * Checks if the request is valid
@@ -270,5 +276,10 @@ class Authz
         }
 
         return $this->permissionName !== null && Gate::denies($this->permissionName, $this->boundModel);
+    }
+
+    public function isSingleModeOn()
+    {
+        return config('authz.single_mode');
     }
 }
