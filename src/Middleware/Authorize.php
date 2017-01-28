@@ -26,7 +26,6 @@ class Authorize
 
         // if single mode is on and no permission to check the request is allowed
         if ($permissionName === null && $authz->isSingleModeOn()) {
-            debug('single mode on no permission');
             return $next($request);
         }
 
@@ -78,13 +77,10 @@ class Authorize
             // define the current key and test it
             if ($permissionName !== null && $currentPermission !== null) {
                 $authz->definePermission($currentPermission);
-                debug($currentPermission);
 
                 if ($authz->isRequestDenied($request)) {
-                    debug('request denied 1');
                     abort(403);
                 } elseif ($authz->isSingleModeOn()) {
-                    debug('single mode on request allowed');
                     return $next($request);
                 }
             }
@@ -116,7 +112,6 @@ class Authorize
                     $authz->definePermission($permission);
                 }
             }
-            debug(Auth::getUser());
         } else {
             if ($authz->isSingleModeOn()) {
                 $currentPermission = Permission::where('key_name', $permissionName)
@@ -151,7 +146,6 @@ class Authorize
         }
 
         if ($authz->isRequestDenied($request)) {
-            debug('denied by last');
             abort(403);
         }
 
