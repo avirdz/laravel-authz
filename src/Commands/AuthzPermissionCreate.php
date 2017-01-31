@@ -39,8 +39,11 @@ class AuthzPermissionCreate extends Command
      */
     public function handle()
     {
-        $input = $this->arguments();
-        $input['description'] = (string) $this->argument('description');
+        $input = [
+            'key_name' => $this->argument('key_name'),
+            'value' => $this->argument('value'),
+            'description' => (string) $this->argument('description'),
+        ];
 
         $validator = PermissionValidator::getValidator($input);
 

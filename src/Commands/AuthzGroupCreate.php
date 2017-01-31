@@ -39,8 +39,10 @@ class AuthzGroupCreate extends Command
      */
     public function handle()
     {
-        $input = $this->arguments();
-        $input['description'] = (string) $this->argument('description');
+        $input = [
+            'name' => $this->argument('name'),
+            'description' => (string) $this->argument('description'),
+        ];
 
         $validator = GroupValidator::getValidator($input);
 
