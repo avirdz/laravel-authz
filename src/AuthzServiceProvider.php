@@ -40,7 +40,7 @@ class AuthzServiceProvider extends ServiceProvider
             ]);
         }
 	
-	if (method_exists('loadMigrationsFrom', $this)) {
+	if (method_exists($this, 'loadMigrationsFrom')) {
 	    $this->loadMigrationsFrom(__DIR__ . '/../migrations');
         } else {
             $this->publishes([
