@@ -13,8 +13,6 @@ class AuthzServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../migrations');
-
         // authz commands
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -40,6 +38,14 @@ class AuthzServiceProvider extends ServiceProvider
                 Commands\AuthzUnshare::class,
                 Commands\AuthzUserGroups::class,
             ]);
+        }
+	
+	if (method_exists('loadMigrationsFrom', $this)) {
+	    $this->loadMigrationsFrom(__DIR__ . '/../migrations');
+        } else {
+            $this->publishes([
+               __DIR__.'/../migrations/' => database_path('migrations')
+            ], 'migrations');
         }
 
         $this->publishes([
