@@ -228,11 +228,11 @@ class Authz
      */
     public function definePermission(Permission $permission)
     {
-        if (in_array($permission->id, $this->definedPermissions)) {
+        if (in_array($permission->key_name, $this->definedPermissions)) {
             return $this;
         }
 
-        $this->definedPermissions[] = $permission->id;
+        $this->definedPermissions[] = $permission->key_name;
 
         switch ($permission->value) {
             case Permission::CUSTOM:
