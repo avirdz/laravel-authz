@@ -21,7 +21,7 @@ trait AuthzResource
             throw new InvalidUserModelException();
         }
 
-        return $this->morphToMany($userClass, 'shareable')
+        return $this->morphedByMany($userClass, 'shareable')
             ->withPivot(['id']);
     }
 
