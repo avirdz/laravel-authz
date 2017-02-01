@@ -70,11 +70,11 @@ class AuthzShareable extends Command
         }
 
         if ($value == Permission::GRANTED) {
-            $item->sharedWith()->attach([$resourceId]);
+            $item->morphedByMany($class, 'shareable')->attach([$resourceId]);
             $this->info($class . ' shared to '
                 . (isset($item->email) ? $item->email : $item->id));
         } elseif ($value == Permission::DENIED) {
-            $item->sharedWith()->detach([$resourceId]);
+            $item->morphedByMany($class, 'shareable')->detach([$resourceId]);
             $this->info($class . ' unshared to '
                 . (isset($item->email) ? $item->email : $item->id));
         }
