@@ -117,11 +117,11 @@ class AuthzPermissionSet extends Command
                         exit(1);
                     }
 
-//                    if (!method_exists('sharedWith', $resource)) {
-//                        $this->error('sharedWith method doesn\'t exist on class ' . get_class($resource)
-//                            .'. Adding the AuthzResource trait to the resource may resolve the issue.');
-//                        exit(1);
-//                    }
+                    if (!is_callable([$resource, 'sharedWith'])) {
+                        $this->error('sharedWith method doesn\'t exist on class ' . get_class($resource)
+                            .'. Adding the AuthzResource trait to the resource may resolve the issue.');
+                        exit(1);
+                    }
 
                     // get shareable
                     $shareableUser = $resource->sharedWith()

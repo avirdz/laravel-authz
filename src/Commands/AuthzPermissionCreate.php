@@ -2,7 +2,7 @@
 
 namespace Avirdz\LaravelAuthz\Commands;
 
-use Avirdz\LaravelAuthz\Validators\Permission as PermissionValidator;
+use Avirdz\LaravelAuthz\Validators\PermissionValidator;
 use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Console\Command;
 

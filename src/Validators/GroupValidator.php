@@ -4,7 +4,7 @@ namespace Avirdz\LaravelAuthz\Validators;
 
 use Validator;
 
-class Group
+class GroupValidator
 {
     public static function getValidator($data)
     {

@@ -188,7 +188,7 @@ class Authz
                 return false;
             }
 
-            if ($resource->user_id == $user->id) {
+            if (isset($resource->user_id) && $resource->user_id == $user->id) {
                 return true;
             } else {
                 $sharedResource = $resource;
@@ -196,21 +196,24 @@ class Authz
                 // load the parent resource
                 // it must be a BelongsTo relationship
                 if ($sharedBy !== null) {
-                    if (method_exists($resource, $sharedBy) && !$resource->relationLoaded($sharedBy)) {
+                    if (is_callable([$resource, $sharedBy])) {
                         $relationship = $resource->{$sharedBy}();
 
-                        if ($relationship instanceof BelongsTo) {
-                            $resource->load($sharedBy);
-                        } else {
+                        if (!$relationship instanceof BelongsTo) {
                             throw new \Exception('Resource parent is not a single resource');
                         }
 
                         $sharedResource = $resource->{$sharedBy};
+
+                        // check if the current user is the owner of the parent resource
+                        if (isset($sharedResource->user_id) && $sharedResource->user_id == $user->id) {
+                            return true;
+                        }
                     }
                 }
 
-                // check if the resource is share with me
-                if (method_exists($sharedResource, 'isSharedWithMe')) {
+                // check if the resource is shared wit the current user
+                if (is_callable([$sharedResource, 'isSharedWithMe'])) {
                     return $sharedResource->isSharedWithMe($permission->id);
                 }
             }

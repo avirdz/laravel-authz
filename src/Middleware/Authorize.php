@@ -3,10 +3,11 @@
 namespace Avirdz\LaravelAuthz\Middleware;
 
 use Auth;
-use Avirdz\LaravelAuthz\Models\Group;
-use Avirdz\LaravelAuthz\Models\Permission;
+use Cache;
 use Closure;
 use Avirdz\LaravelAuthz\Authz;
+use Avirdz\LaravelAuthz\Models\Group;
+use Avirdz\LaravelAuthz\Models\Permission;
 
 class Authorize
 {
@@ -24,7 +25,7 @@ class Authorize
     {
         $authz = new Authz($permissionName, $resourceName, $sharedBy);
 
-        // if single mode is on and no permission to check the request is allowed
+        // if single mode is on and no permission to check, the request is allowed
         if ($permissionName === null && $authz->isSingleModeOn()) {
             return $next($request);
         }
@@ -60,13 +61,15 @@ class Authorize
                 }
             } else {
                 // load logged user relevant permissions
-                $permissions = Permission::whereIn('value', [
-                    Permission::ANY,
-                    Permission::AUTHENTICATED,
-                    Permission::OWNER,
-                    Permission::SHARED
-                ])->select(['key_name', 'value'])
-                    ->get();
+                $permissions = Cache::remember('logged_permissions', config('authz.cache_expire', 60), function () {
+                    return Permission::whereIn('value', [
+                        Permission::ANY,
+                        Permission::AUTHENTICATED,
+                        Permission::OWNER,
+                        Permission::SHARED
+                    ])->select(['key_name', 'value'])
+                        ->get();
+                });
 
                 $currentPermission = null;
                 if (!$permissions->isEmpty()) {
@@ -126,15 +129,17 @@ class Authorize
                 }
             } else {
                 // load permissions for anonymous group, and permissions with value ALLOW_ALL and ONLY_ANONYMOUS
-                $permissions = Permission::join(
-                    'group_permission',
-                    'group_permission.permission_id',
-                    '=',
-                    'permissions.id'
-                )->where('group_permission.group_id', Group::ANONYMOUS_ID)
-                    ->orWhereIn('permissions.value', [Permission::ANY, Permission::ANONYMOUS])
-                    ->select('permissions.*')
-                    ->get();
+                $permissions = Cache::remember('anonymous_permissions', config('authz.cache_expire', 60), function () {
+                    return Permission::join(
+                        'group_permission',
+                        'group_permission.permission_id',
+                        '=',
+                        'permissions.id'
+                    )->where('group_permission.group_id', Group::ANONYMOUS_ID)
+                        ->orWhereIn('permissions.value', [Permission::ANY, Permission::ANONYMOUS])
+                        ->select('permissions.*')
+                        ->get();
+                });
 
                 // define permissions on gate
                 if (!$permissions->isEmpty()) {

@@ -2,7 +2,7 @@
 
 namespace Avirdz\LaravelAuthz\Commands;
 
-use Avirdz\LaravelAuthz\Validators\Group as GroupValidator;
+use Avirdz\LaravelAuthz\Validators\GroupValidator;
 use Avirdz\LaravelAuthz\Models\Group;
 use Illuminate\Console\Command;
 

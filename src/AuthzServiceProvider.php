@@ -2,6 +2,9 @@
 
 namespace Avirdz\LaravelAuthz;
 
+use Cache;
+use Gate;
+use Avirdz\LaravelAuthz\Models\Permission;
 use Illuminate\Support\ServiceProvider;
 
 class AuthzServiceProvider extends ServiceProvider
@@ -51,6 +54,25 @@ class AuthzServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/authz.php' => config_path('authz.php')
         ], 'config');
+
+        Permission::saved(function ($permission) {
+            \Log::debug('permission saved');
+            if (Cache::has('logged_permissions')) {
+                Cache::forget('logged_permissions');
+                \Log::debug('logged permissions deleted');
+            }
+
+            if (Cache::has('anonymous_permissions')) {
+                Cache::forget('anonymous_permissions');
+                \Log::debug('anonymous permissions deleted');
+            }
+        });
+
+        Gate::before(function ($user) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+        });
     }
 
     /**

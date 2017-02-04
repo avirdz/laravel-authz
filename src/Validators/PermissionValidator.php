@@ -4,7 +4,7 @@ namespace Avirdz\LaravelAuthz\Validators;
 
 use Validator;
 
-class Permission
+class PermissionValidator
 {
     public static function getValidator($data)
     {
