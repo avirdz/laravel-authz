@@ -14,7 +14,7 @@ class AuthzPermissionSeeder extends Seeder
     {
         DB::table('permissions')->insert([
             [
-                'key_name' => 'groups.view',
+                'key_name' => 'groups.all',
                 'description' => 'View groups',
                 'value' => Permission::ROOT,
             ],
@@ -44,7 +44,7 @@ class AuthzPermissionSeeder extends Seeder
                 'value' => Permission::ROOT,
             ],
             [
-                'key_name' => 'permissions.view',
+                'key_name' => 'permissions.all',
                 'description' => 'View permissions',
                 'value' => Permission::ROOT,
             ],
