@@ -56,15 +56,12 @@ class AuthzServiceProvider extends ServiceProvider
         ], 'config');
 
         Permission::saved(function ($permission) {
-            \Log::debug('permission saved');
             if (Cache::has('logged_permissions')) {
                 Cache::forget('logged_permissions');
-                \Log::debug('logged permissions deleted');
             }
 
             if (Cache::has('anonymous_permissions')) {
                 Cache::forget('anonymous_permissions');
-                \Log::debug('anonymous permissions deleted');
             }
         });
 
