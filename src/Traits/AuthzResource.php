@@ -36,7 +36,7 @@ trait AuthzResource
             $shareableInfo = \DB::table('shareables')
                 ->leftJoin('permission_shareable', function ($query) use ($permissionId) {
                     $query->on('permission_shareable.shareable_id', '=', 'shareables.id');
-                    $query->where('permission_shareable.permission_id', $permissionId);
+                    $query->where('permission_shareable.permission_id', '=', $permissionId);
                 })
                 ->where('shareables.user_id', \Auth::id())
                 ->where('shareables.shareable_id', $this->id)
