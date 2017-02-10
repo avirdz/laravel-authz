@@ -52,7 +52,7 @@ class Authorize
             // load single permission if single mode on
             if ($authz->isSingleModeOn()) {
                 $currentPermission = Permission::where('key_name', $permissionName)
-                    ->select(['key_name', 'value'])
+                    ->select(['id', 'key_name', 'value'])
                     ->first();
 
                 // if permission doesn't exist deny the request
@@ -67,7 +67,7 @@ class Authorize
                         Permission::AUTHENTICATED,
                         Permission::OWNER,
                         Permission::SHARED
-                    ])->select(['key_name', 'value'])
+                    ])->select(['id', 'key_name', 'value'])
                         ->get();
                 });
 
@@ -118,7 +118,7 @@ class Authorize
         } else {
             if ($authz->isSingleModeOn()) {
                 $currentPermission = Permission::where('key_name', $permissionName)
-                    ->select(['key_name', 'value'])
+                    ->select(['id', 'key_name', 'value'])
                     ->first();
 
                 // if permission doesn't exist deny the request

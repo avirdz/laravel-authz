@@ -21,7 +21,7 @@ class CreateShareablesTable extends Migration
             $table->string('shareable_type', 100);
 
 
-            $table->unique(['shareable_id', 'shareable_type']);
+            $table->unique(['user_id', 'shareable_id', 'shareable_type']);
 
 
             $table->foreign('user_id')->references('id')
