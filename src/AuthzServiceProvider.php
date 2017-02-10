@@ -42,9 +42,9 @@ class AuthzServiceProvider extends ServiceProvider
                 Commands\AuthzUserGroups::class,
             ]);
         }
-	
-	if (method_exists($this, 'loadMigrationsFrom')) {
-	    $this->loadMigrationsFrom(__DIR__ . '/../migrations');
+
+        if (method_exists($this, 'loadMigrationsFrom')) {
+            $this->loadMigrationsFrom(__DIR__ . '/../migrations');
         } else {
             $this->publishes([
                __DIR__.'/../migrations/' => database_path('migrations')
@@ -79,6 +79,6 @@ class AuthzServiceProvider extends ServiceProvider
      */
     public function register()
     {
-
+        $this->mergeConfigFrom(__DIR__ . '/../config/authz.php', 'authz');
     }
 }

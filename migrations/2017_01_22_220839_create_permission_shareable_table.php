@@ -19,7 +19,7 @@ class CreatePermissionShareableTable extends Migration
 
             $table->primary(['shareable_id', 'permission_id']);
 
-            $table->foreign('shareable_id')->references('id')
+            $table->foreign('shareable_id')->references('shared_id')
                 ->on('shareables')->onDelete('cascade');
 
             $table->foreign('permission_id')->references('id')

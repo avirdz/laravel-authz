@@ -14,7 +14,7 @@ class CreateShareablesTable extends Migration
     public function up()
     {
         Schema::create('shareables', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->bigIncrements('shared_id');
 
             $table->bigInteger('user_id')->unsigned();
             $table->bigInteger('shareable_id')->unsigned();
