@@ -22,7 +22,7 @@ trait AuthzResource
         }
 
         return $this->morphToMany($userClass, 'shareable')
-            ->withPivot(['id']);
+            ->withPivot(['shared_id']);
     }
 
     /**

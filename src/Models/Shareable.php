@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Shareable extends Model
 {
     public $timestamps = false;
+    protected $primaryKey = 'shared_id';
 
     protected $fillable = [
         'user_id',
