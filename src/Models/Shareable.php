@@ -21,7 +21,9 @@ class Shareable extends Model
      */
     public function permissionExceptions()
     {
-        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Permission::class);
+        $permissionClass = config('authz.permission_model');
+
+        return $this->belongsToMany($permissionClass);
     }
 
     public function users()

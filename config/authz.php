@@ -4,11 +4,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | User Model
+    | Models
     |--------------------------------------------------------------------------
     |
     */
-    'user_model' => App\User::class,
+    'user_model' => 'App\User',
+    'group_model' => Avirdz\LaravelAuthz\Models\Group::class,
+    'permission_model' => Avirdz\LaravelAuthz\Models\Permission::class,
+    'shareable_model' => Avirdz\LaravelAuthz\Models\Shareable::class,
 
     /*
     |--------------------------------------------------------------------------

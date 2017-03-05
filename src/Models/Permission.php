@@ -90,7 +90,9 @@ class Permission extends Model
 
     public function shareableExceptions()
     {
-        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Shareable::class);
+        $shareableClass = config('authz.shareable_model');
+
+        return $this->belongsToMany($shareableClass);
     }
 
     /**
@@ -99,7 +101,9 @@ class Permission extends Model
      */
     public function groups()
     {
-        return $this->belongsToMany(\Avirdz\LaravelAuthz\Models\Group::class)
+        $groupClass = config('authz.group_model');
+
+        return $this->belongsToMany($groupClass)
             ->withPivot(['group_id', 'permission_id', 'permission_status']);
     }
 
