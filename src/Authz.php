@@ -168,6 +168,11 @@ class Authz
                 return false;
             }
 
+            $resourceType = config('authz.user_model');
+            if ($resource instanceof $resourceType) {
+                return $resource->id == $user->id;
+            }
+
             return $resource->user_id == $user->id;
         });
 
