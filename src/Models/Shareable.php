@@ -23,7 +23,7 @@ class Shareable extends Model
     {
         $permissionClass = config('authz.permission_model');
 
-        return $this->belongsToMany($permissionClass);
+        return $this->belongsToMany($permissionClass, 'permission_shareable', 'shareable_id');
     }
 
     public function users()
